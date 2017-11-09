@@ -33,12 +33,6 @@ void print_coo_matrix(Matrix mat) {
 /** C = AA
     all matrices are in csr format */
 void self_multiplication(int M, int N, int *I, int *J, double *val) {
-    for(int i = 0; i < M; i++) {
-        // access ith row
-        for(int j=0; j < I[i+1]-I[i]; j++) {
-            double a = val[I[i] + j];
-        }
-    }
 }
 
 /** C = AB
