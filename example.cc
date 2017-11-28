@@ -66,12 +66,12 @@ void esc_multiplication(Matrix A, Matrix B) {
     print_coo_matrix(tmpC);
 
     // sort
-    std::vector<std::tuple<int, int, double>> vals;
+    vector<tuple<int, int, double>> vals;
     for(int i = 0; i < tmpC.nz; i++)
-        vals.push_back(std::make_tuple(tmpC.I[i], tmpC.J[i], tmpC.val[i]));
-    std::sort(vals.begin(), vals.end(), 
+        vals.push_back(make_tuple(tmpC.I[i], tmpC.J[i], tmpC.val[i]));
+    sort(vals.begin(), vals.end(), 
         [](tuple<int, int, double> const &t1, tuple<int, int, double> const &t2) -> bool {
-            return (get<1>(t1)<get<1>(t2)); // or use a custom compare function
+            return (get<0>(t1)<get<0>(t2)) || (get<1>(t1)<get<1>(t2)); // or use a custom compare function
     });
 	vector<tuple<int,int,double>>::iterator it;
 	printf("Sort:\n");
@@ -91,13 +91,13 @@ void esc_multiplication(Matrix A, Matrix B) {
         C.val[k] = get<2>(vals[i]);
         for(int j = i+1; j < tmpC.nz; j++) {
             if( C.I[k] == get<0>(vals[j]) && C.J[k] == get<1>(vals[j]) ) {
-		C.val[k] += get<2>(vals[j]);
+                C.val[k] += get<2>(vals[j]);
             } else {
-                k++;
-		i = j - 1;
+                i = j - 1;
                 break;
             }
         }
+        k++;
     }
     C.nz = k;
     printf("C:\n");
