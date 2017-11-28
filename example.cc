@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <tuple>
 #include <vector>
+#include <algorithm>
 #include "matrix_io.h"
+using namespace std;
 
 void print_csr_matrix(Matrix mat) {
     for(int i = 0; i < mat.M; i++) {
@@ -68,10 +70,14 @@ void esc_multiplication(Matrix A, Matrix B) {
     for(int i = 0; i < tmpC.nz; i++)
         vals.push_back(std::make_tuple(tmpC.I[i], tmpC.J[i], tmpC.val[i]));
     std::sort(vals.begin(), vals.end(), 
-        [](tuple<int, int, double> const &t1, tuple<int, int, double> const &t2) {
-            return (get<0>(t1) < get<0>(t2) && get<1>(t1) < get<1(t2) ); // or use a custom compare function
+        [](tuple<int, int, double> const &t1, tuple<int, int, double> const &t2) -> bool {
+            return (get<1>(t1)<get<1>(t2)); // or use a custom compare function
     });
-
+	vector<tuple<int,int,double>>::iterator it;
+	printf("Sort:\n");
+	for(it = vals.begin(); it != vals.end(); it++)    {
+        printf("%d %d %f\n", get<0>(*it),  get<1>(*it), get<2>(*it));
+	}
 
     Matrix C;
     C.I = (int*)malloc(tmpC.nz*sizeof(int));
@@ -80,18 +86,22 @@ void esc_multiplication(Matrix A, Matrix B) {
     // compression
     k = 0;
     for(int i = 0; i < tmpC.nz; i++) {
-        C.I[k] = tmpC.I[i];
-        C.J[k] = tmpC.J[i];
-        C.val[k] = tmpC.val[i];
-        for(int j = i+1; j < C.nz; j++) {
-            if(tmpC.I[i] == tmpC.I[j] && tmpC.J[i] == tmpC.J[j]) {
-                k++;
+        C.I[k] = get<0>(vals[i]);
+        C.J[k] = get<1>(vals[i]);
+        C.val[k] = get<2>(vals[i]);
+        for(int j = i+1; j < tmpC.nz; j++) {
+            if( C.I[k] == get<0>(vals[j]) && C.J[k] == get<1>(vals[j]) ) {
+		C.val[k] += get<2>(vals[j]);
             } else {
+                k++;
+		i = j - 1;
                 break;
             }
         }
     }
     C.nz = k;
+    printf("C:\n");
+    print_coo_matrix(C);
 
 }
 
