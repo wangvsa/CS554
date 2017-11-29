@@ -34,11 +34,6 @@ void print_coo_matrix(Matrix mat) {
 }
 
 
-/** C = AA
-    all matrices are in csr format */
-void self_multiplication(int M, int N, int *I, int *J, double *val) {
-}
-
 /** C = AB
     all matrices are in coo format
     use Expansion, Sort, Compress(ESC) algorithm */
@@ -109,11 +104,12 @@ void esc_multiplication(Matrix A, Matrix B) {
 int main(int argc, char *argv[]) {
     Matrix A, B;   // Matrix is defined in matrix_io.h
 
-    if (argc < 3) {
+    if (argc < 2) {
         fprintf(stderr, "Usage: %s [martix-market-filename]\n", argv[0]);
         exit(1);
     }
     
+    /*
     read_mm_matrix_coo(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
     print_coo_matrix(A);
 
@@ -121,11 +117,13 @@ int main(int argc, char *argv[]) {
     print_coo_matrix(B);
 
     esc_multiplication(A, B);
+    */
 
-    //read_mm_matrix_csr(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
-    //print_csr_matrix(A);
+    read_mm_matrix_csr(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
+    print_csr_matrix(A);
 
-    //read_mm_matrix_csc(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
-    //print_csc_matrix(A);
+    read_mm_matrix_csc(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
+    print_csc_matrix(A);
+
     return 0;
 }

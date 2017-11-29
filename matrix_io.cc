@@ -87,9 +87,13 @@ void read_mm_matrix_csr(char *fname, int *M, int *N, int *nz, int **I, int **J, 
 }
 
 void read_mm_matrix_csc(char *fname, int *M, int *N, int *nz, int **I, int **J, double **val) {
-    int *csr_I, *csr_J;
-    double *csr_val;
+    int *csr_I, *csr_J; double *csr_val;
     read_mm_matrix_csr(fname, M, N, nz, &csr_I, &csr_J, &csr_val);
+
+    // csr2csc not in place conversion, need to allocate memory first.
+    *I = (int *) malloc(*nz * sizeof(int));
+    *J = (int *) malloc(*nz * sizeof(int));
+    *val = (double *) malloc(*nz * sizeof(double));
     csr2csc(*M, *N, *nz, csr_I, csr_J, csr_val, *I, *J, *val);
 }
 
