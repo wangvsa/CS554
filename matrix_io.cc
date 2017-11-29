@@ -76,8 +76,8 @@ void read_mm_matrix_coo(char *fname, int *M, int *N, int *nz, int **I, int **J, 
     /************************/
     /* now write out matrix */
     /************************/
-    mm_write_banner(stdout, matcode);
-    mm_write_mtx_crd_size(stdout, *M, *N, *nz);
+    //mm_write_banner(stdout, matcode);
+    //mm_write_mtx_crd_size(stdout, *M, *N, *nz);
 }
 
 
