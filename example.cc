@@ -24,12 +24,12 @@ int main(int argc, char *argv[]) {
 
 
     read_mm_matrix_csc(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
-    //print_matrix_head(A);
-    print_csc_matrix(A);
+    print_matrix_head(A);
+    //print_csc_matrix(A);
 
     read_mm_matrix_csr(argv[2], &(B.M), &(B.N), &(B.nz), &(B.I), &(B.J), &(B.val));
-    //print_matrix_head(A);
-    print_csr_matrix(B);
+    print_matrix_head(A);
+    //print_csr_matrix(B);
 
     esc(A, B);
 
