@@ -72,8 +72,16 @@ void esc_multiplication(Matrix A, Matrix B) {
     print_coo_matrix(C);
 }
 
-void scale_B() {
 
+void scale_csr_B(Matrix mat) {
+    for(int i = 0; i < mat.M; i++) {
+        // access ith row
+        for(int j=mat.I[i]; j < mat.I[i+1]; j++) {
+            double a = mat.val[j];
+            printf("%f ", a);
+        }
+        printf("\n");
+    }
 }
 
 
@@ -96,12 +104,12 @@ int main(int argc, char *argv[]) {
     */
 
     read_mm_matrix_csr(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
-    print_matrix_head(A);
-    //print_csr_matrix(A);
+    //print_matrix_head(A);
+    print_csr_matrix(A);
 
     read_mm_matrix_csc(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
-    print_matrix_head(A);
-    //print_csc_matrix(A);
+    //print_matrix_head(A);
+    print_csc_matrix(A);
 
     return 0;
 }
