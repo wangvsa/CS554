@@ -14,9 +14,9 @@
 *      to files.
 *
 *   2) ANSI C requires one to use the "l" format modifier when reading
-*      double precision floating point numbers in scanf() and
+*      float precision floating point numbers in scanf() and
 *      its variants.  For example, use "%lf", "%lg", or "%le"
-*      when reading doubles, otherwise errors will occur.
+*      when reading floats, otherwise errors will occur.
 */
 
 #include <stdio.h>
@@ -24,11 +24,11 @@
 #include "matrix_io.h"
 #include "mmio.h"
 
-void sort(int *col_idx, double *a, int start, int end);
-void coo2csr_in(int n, int nz, int *i_idx, int *j_idx, double *a);
-void csr2csc(int n, int m, int nz, int *row_start, int *col_idx, double *a, int *row_idx, int *col_start, double *csc_a);
+void sort(int *col_idx, float *a, int start, int end);
+void coo2csr_in(int n, int nz, int *i_idx, int *j_idx, float *a);
+void csr2csc(int n, int m, int nz, int *row_start, int *col_idx, float *a, int *row_idx, int *col_start, float *csc_a);
 
-void read_mm_matrix_coo(char *fname, int *M, int *N, int *nz, int **I, int **J, double **val) {
+void read_mm_matrix_coo(char *fname, int *M, int *N, int *nz, int **I, int **J, float **val) {
 
     int ret_code;
     MM_typecode matcode;
@@ -59,14 +59,14 @@ void read_mm_matrix_coo(char *fname, int *M, int *N, int *nz, int **I, int **J, 
     /* reseve memory for matrices */
     *I = (int *) malloc(*nz * sizeof(int));
     *J = (int *) malloc(*nz * sizeof(int));
-    *val = (double *) malloc(*nz * sizeof(double));
+    *val = (float *) malloc(*nz * sizeof(float));
 
 
-    /* NOTE: when reading in doubles, ANSI C requires the use of the "l"  */
+    /* NOTE: when reading in floats, ANSI C requires the use of the "l"  */
     /*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
     /*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            */
     for (int i=0; i<*nz; i++) {
-        fscanf(f, "%d %d %lg\n", &(*I)[i], &(*J)[i], &(*val)[i]);
+        fscanf(f, "%d %d %f\n", &(*I)[i], &(*J)[i], &(*val)[i]);
         (*I)[i]--;  /* adjust from 1-based to 0-based */
         (*J)[i]--;
     }
@@ -81,26 +81,26 @@ void read_mm_matrix_coo(char *fname, int *M, int *N, int *nz, int **I, int **J, 
 }
 
 
-void read_mm_matrix_csr(char *fname, int *M, int *N, int *nz, int **I, int **J, double **val) {
+void read_mm_matrix_csr(char *fname, int *M, int *N, int *nz, int **I, int **J, float **val) {
     read_mm_matrix_coo(fname, M, N, nz, I, J, val);
     coo2csr_in(*M, *nz, *I, *J, *val);
 }
 
-void read_mm_matrix_csc(char *fname, int *M, int *N, int *nz, int **I, int **J, double **val) {
-    int *csr_I, *csr_J; double *csr_val;
+void read_mm_matrix_csc(char *fname, int *M, int *N, int *nz, int **I, int **J, float **val) {
+    int *csr_I, *csr_J; float *csr_val;
     read_mm_matrix_csr(fname, M, N, nz, &csr_I, &csr_J, &csr_val);
 
     // csr2csc not in place conversion, need to allocate memory first.
     *I = (int *) malloc(*nz * sizeof(int));
     *J = (int *) malloc(*nz * sizeof(int));
-    *val = (double *) malloc(*nz * sizeof(double));
+    *val = (float *) malloc(*nz * sizeof(float));
     csr2csc(*M, *N, *nz, csr_I, csr_J, csr_val, *I, *J, *val);
 }
 
 
-void sort(int *col_idx, double *a, int start, int end) {
+void sort(int *col_idx, float *a, int start, int end) {
     int i, j, it;
-    double dt;
+    float dt;
     for (i=end-1; i>start; i--)
         for(j=start; j<i; j++)
             if (col_idx[j] > col_idx[j+1]) {
@@ -118,11 +118,11 @@ void sort(int *col_idx, double *a, int start, int end) {
 
 /* converts COO format to CSR format, in-place 
    n is the number of rows. */
-void coo2csr_in(int n, int nz, int *i_idx, int *j_idx, double *a) {
+void coo2csr_in(int n, int nz, int *i_idx, int *j_idx, float *a) {
     int *row_start;
     int i, j;
     int init, i_next, j_next, i_pos;
-    double dt, a_next;
+    float dt, a_next;
 
     row_start = (int *)malloc((n+1)*sizeof(int));
     if (!row_start) {
@@ -178,7 +178,7 @@ void coo2csr_in(int n, int nz, int *i_idx, int *j_idx, double *a) {
    if a == NULL, only pattern is reorganized.
    the size of matrix is m x n.
    */
-void csr2csc(int m, int n, int nz, int *row_start, int *col_idx, double *a, int *row_idx, int *col_start, double *csc_a) {
+void csr2csc(int m, int n, int nz, int *row_start, int *col_idx, float *a, int *row_idx, int *col_start, float *csc_a) {
     int i, j, k, l;
     int *ptr;
 

@@ -15,7 +15,7 @@ void esc_multiplication(Matrix A, Matrix B) {
 
     tmpC.I = (int*)malloc(A.nz*B.nz*sizeof(int));
     tmpC.J = (int*)malloc(A.nz*B.nz*sizeof(int));
-    tmpC.val = (double*)malloc(A.nz*B.nz*sizeof(double));
+    tmpC.val = (float*)malloc(A.nz*B.nz*sizeof(float));
 
     // expression
     int k = 0;
@@ -34,14 +34,14 @@ void esc_multiplication(Matrix A, Matrix B) {
     print_coo_matrix(tmpC);
 
     // sort
-    vector<tuple<int, int, double>> vals;
+    vector<tuple<int, int, float>> vals;
     for(int i = 0; i < tmpC.nz; i++)
         vals.push_back(make_tuple(tmpC.I[i], tmpC.J[i], tmpC.val[i]));
     sort(vals.begin(), vals.end(), 
-        [](tuple<int, int, double> const &t1, tuple<int, int, double> const &t2) -> bool {
+        [](tuple<int, int, float> const &t1, tuple<int, int, float> const &t2) -> bool {
             return (get<0>(t1)<get<0>(t2)) || (get<1>(t1)<get<1>(t2)); // or use a custom compare function
     });
-	vector<tuple<int,int,double>>::iterator it;
+	vector<tuple<int,int,float>>::iterator it;
 	printf("Sort:\n");
 	for(it = vals.begin(); it != vals.end(); it++)    {
         printf("%d %d %f\n", get<0>(*it),  get<1>(*it), get<2>(*it));
@@ -50,7 +50,7 @@ void esc_multiplication(Matrix A, Matrix B) {
     Matrix C;
     C.I = (int*)malloc(tmpC.nz*sizeof(int));
     C.J = (int*)malloc(tmpC.nz*sizeof(int));
-    C.val = (double*)malloc(tmpC.nz*sizeof(double));
+    C.val = (float*)malloc(tmpC.nz*sizeof(float));
     // compression
     k = 0;
     for(int i = 0; i < tmpC.nz; i++) {
@@ -70,6 +70,9 @@ void esc_multiplication(Matrix A, Matrix B) {
     C.nz = k;
     printf("C:\n");
     print_coo_matrix(C);
+}
+
+void scale_B() {
 
 }
 
@@ -93,10 +96,12 @@ int main(int argc, char *argv[]) {
     */
 
     read_mm_matrix_csr(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
-    print_csr_matrix(A);
+    print_matrix_head(A);
+    //print_csr_matrix(A);
 
     read_mm_matrix_csc(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
-    print_csc_matrix(A);
+    print_matrix_head(A);
+    //print_csc_matrix(A);
 
     return 0;
 }

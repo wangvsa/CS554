@@ -14,9 +14,9 @@
 *      to files.
 *
 *   2) ANSI C requires one to use the "l" format modifier when reading
-*      double precision floating point numbers in scanf() and
+*      float precision floating point numbers in scanf() and
 *      its variants.  For example, use "%lf", "%lg", or "%le"
-*      when reading doubles, otherwise errors will occur.
+*      when reading floats, otherwise errors will occur.
 */
 
 
@@ -26,22 +26,22 @@
 typedef struct type_matrix {
 	int M, N, nz;	// number of rows, columns, and non-zeros
 	int *I, *J;		// row pointers, column indices
-	double *val;	// all non-zero values
+	float *val;	// all non-zero values
 } Matrix;
 
 /* reads matrix market format (coordinate) and returns csr format 
     int: fname, filename
     out: M, N, nz, I, J, val*/
-void read_mm_matrix_csr(char *fname, int *M, int *N, int *nz, int **I, int **J, double **val);
+void read_mm_matrix_csr(char *fname, int *M, int *N, int *nz, int **I, int **J, float **val);
 
 /* reads matrix market format (coordinate) and returns coo format
     int: fname, filename
     out: M, N, nz, I, J, val*/
-void read_mm_matrix_coo(char *fname, int *M, int *N, int *nz, int **I, int **J, double **val);
+void read_mm_matrix_coo(char *fname, int *M, int *N, int *nz, int **I, int **J, float **val);
 
 /* reads matrix market format (coordinate) and returns coo format
     int: fname, filename
     out: M, N, nz, I, J, val*/
-void read_mm_matrix_csc(char *fname, int *M, int *N, int *nz, int **I, int **J, double **val);
+void read_mm_matrix_csc(char *fname, int *M, int *N, int *nz, int **I, int **J, float **val);
 
 #endif
