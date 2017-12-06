@@ -1,7 +1,9 @@
 #include <iostream>
 #include <stdio.h>
 #include <unordered_map>
+#include <vector>
 #include <chrono>
+#include <omp.h>
 #include "util.h"
 #include "matrix_io.h"
 #include "esc.h"
@@ -17,17 +19,17 @@ inline int get_second(size_t C) { return C & 0xFFFFFFFF; }
 
 
 // Scale ith row of matrix B
-void scale_csr_row(Matrix mat, float scalar, int A_row, int A_col, unordered_map<size_t, float> *C) {
+inline void scale_csr_row(Matrix mat, float scalar, int A_row, int A_col, unordered_map<size_t, float> *C) {
     // access ith row of B, i.e. ith col of A
     for(int i=mat.I[A_col]; i < mat.I[A_col+1]; i++) {
         int B_col = mat.J[i];
         double val = mat.val[i] * scalar;
-
         size_t p = key(A_row, B_col);
-        if((*C).find(p) == (*C).end())
-        	(*C)[p] = val;
-        else
-        	(*C)[p] += val;
+        if((*C).find(p) == (*C).end()) {
+        	    (*C)[p] = val;
+        } else {
+        	    (*C)[p] += val;
+        }
     }
 }
 
@@ -59,20 +61,27 @@ Matrix map_to_coo_matrix(unordered_map<size_t, float> m, int ROWS, int COLS) {
  */
 void esc(Matrix A, Matrix B) {
 	auto start = Clock::now();
-	unordered_map<size_t, float> C;
 
+    int const T = 8;
+    // each thread will operate on its own map
+    // And we'll combie all maps at the end
+	unordered_map<size_t, float> maps[T];
+
+    omp_set_num_threads(T);
+    #pragma omp parallel for
 	for (int i = 0; i < A.N; i++) {
+        int tid = omp_get_thread_num();
 		// ith column of A
 		for(int j = A.J[i]; j < A.J[i+1]; j++) {
 			int row = A.I[j];
 			float scalar = A.val[j];
-			scale_csr_row(B, scalar, row, i, &C);
+			scale_csr_row(B, scalar, row, i, &(maps[tid]));
 		}
 	}
 	auto end = Clock::now();
 
-	Matrix res = map_to_coo_matrix(C, A.M, B.N);
-	print_matrix_head(res);
+	//Matrix res = map_to_coo_matrix(C, A.M, B.N);
+	//print_matrix_head(res);
 	//print_coo_matrix(res);
 
 	std::chrono::duration<double, milli> fp_ms = end - start;
