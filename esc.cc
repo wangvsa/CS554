@@ -58,13 +58,14 @@ Matrix map_to_coo_matrix(unordered_map<size_t, float> m, int ROWS, int COLS) {
 /**
  *  Matrix A: CSC Matrix
  *  Matrix B: CSR Matrix
+ *  Use unordered_map to avoid sort and compression
  */
 void esc(Matrix A, Matrix B) {
 	auto start = Clock::now();
 
     int const T = 8;
     // each thread will operate on its own map
-    // And we'll combie all maps at the end
+    // and we'll combine all maps at the end
 	unordered_map<size_t, float> maps[T];
 
     omp_set_num_threads(T);

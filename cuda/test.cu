@@ -1,48 +1,47 @@
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-#include <thrust/generate.h>
-#include <thrust/reduce.h>
-#include <thrust/functional.h>
-#include <algorithm>
-#include <cstdlib>
 #include <iostream>
 #include "../matrix_io.h"
 #include "../util.h"
 
-typedef struct DeviceMatrix_t {
-    int M, N, nz;       // number of rows, number of cloumns, and number of non-zeros
-    thrust::device_vector<int> I;
-    thrust::device_vector<int> J;
-    thrust::device_vector<double> val;
-    DeviceMatrix_t(int _M, int _N, int _nz, thrust::host_vector<int>_I, thrust::host_vector<int> _J, thrust::host_vector<int> _val) {
-        M = _M;
-        N = _N;
-        nz = _nz;
-        I = _I;
-        J = _J;
-        val = _val;
-    }
-} DeviceMatrix;
+// Define key(i, j), convert coordinate(i, j) to a size_t value
+__global__ inline size_t key(int i, int j) {return (size_t) i << 32 | (unsigned int) j;}
+__global__ inline int get_first(size_t C) { return C>>32; }
+__global__ inline int get_second(size_t C) { return C & 0xFFFFFFFF; }
 
-void multiplication(DeviceMatrix A, DeviceMatrix B) {
-    for(size_t i = 0; i < A.val.size(); i++) {
-        std::cout<<A.val[i]<<std::endl;
+
+// Every thread in the same block will work on this method with different scalar
+// So mat should be stored in shared memory
+__global__
+void scale_csr_row(Matrix mat, float scalar, int A_row, int A_col) {
+    // access ith row of B, i.e. ith col of A
+    for(int i=mat.I[A_col]; i < mat.I[A_col+1]; i++) {
+        int B_col = mat.J[i];
+        double val = mat.val[i] * scalar;
+        size_t p = key(A_row, B_col);
+        /*
+        if((*C).find(p) == (*C).end()) {
+            (*C)[p] = val;
+        } else {
+            (*C)[p] += val;
+        }
+        */
     }
-    //double x = thrust::reduce(A.val.begin(), A.val.end(), 0, thrust::plus<int>());
-    //double y = thrust::reduce(B.val.begin(), B.val.end(), 0, thrust::plus<int>());
-    //printf("x:%f, y:%f\n", x, y);
 }
 
-void test()
-{
-    // generate random data serially
-    thrust::host_vector<int> h_vec(100);
-    std::generate(h_vec.begin(), h_vec.end(), rand);
-    // transfer to device and compute sum
-    thrust::device_vector<int> d_vec = h_vec;
-    int x = thrust::reduce(d_vec.begin(), d_vec.end(), 0, thrust::plus<int>());
-    printf("x:%d", x);
+__global__
+void cuda_multiplication(Matrix A, Matrix B) {
+    // go through all columns of csc matrix A
+    // each block is responsible for processing one column of A
+    for (int i = 0; i < A.N; i++) {
+        // get all values in ith column of A
+        for(int j = A.J[i]; j < A.J[i+1]; j++) {
+            int row = A.I[j];
+            float scalar = A.val[j];
+            scale_csr_row(B, scalar, row, i);
+        }
+    }
+
 }
+
 
 int main(int argc, char *argv[]) {
     Matrix A, B;
@@ -50,15 +49,13 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: %s [martix-market-filename]\n", argv[0]);
         exit(1);
     }
+
     read_mm_matrix_csc(argv[1], &(A.M), &(A.N), &(A.nz), &(A.I), &(A.J), &(A.val));
-    print_csc_matrix(A);
-
+    print_matrix_head(A);
     read_mm_matrix_csr(argv[2], &(B.M), &(B.N), &(B.nz), &(B.I), &(B.J), &(B.val));
-    print_csr_matrix(B);
+    print_matrix_head(B);
 
-    //DeviceMatrix dev_A(A.M, A.N, A.nz, A.I, A.J, A.val);
-    thrust::host_vector<int> h_I(3, B.I);
-    DeviceMatrix dev_B(B.M, B.N, B.nz, thrust::host_vector<int>(3, B.I), thrust::host_vector<int>(B.N, B.J), thrust::host_vector<int>(B.nz, B.val));
+    cuda_multiplication(Matrix A, Matrix B);
 
     return 0;
 }
