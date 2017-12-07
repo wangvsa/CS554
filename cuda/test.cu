@@ -1,22 +1,28 @@
 #include <iostream>
+#include <stdio.h>
+#include <chrono>
 #include "../matrix_io.h"
 #include "../util.h"
+#include "timer.h"
+
+using namespace std;
+using Clock=std::chrono::high_resolution_clock;
 
 // Define key(i, j), convert coordinate(i, j) to a size_t value
-__global__ inline size_t key(int i, int j) {return (size_t) i << 32 | (unsigned int) j;}
-__global__ inline int get_first(size_t C) { return C>>32; }
-__global__ inline int get_second(size_t C) { return C & 0xFFFFFFFF; }
+inline size_t key(int i, int j) {return (size_t) i << 32 | (unsigned int) j;}
+inline int get_first(size_t C) { return C>>32; }
+inline int get_second(size_t C) { return C & 0xFFFFFFFF; }
 
 
 // Every thread in the same block will work on this method with different scalar
 // So mat should be stored in shared memory
-__global__
+__device__
 void scale_csr_row(Matrix mat, float scalar, int A_row, int A_col) {
     // access ith row of B, i.e. ith col of A
     for(int i=mat.I[A_col]; i < mat.I[A_col+1]; i++) {
         int B_col = mat.J[i];
         double val = mat.val[i] * scalar;
-        size_t p = key(A_row, B_col);
+        //size_t p = key(A_row, B_col);
         /*
         if((*C).find(p) == (*C).end()) {
             (*C)[p] = val;
@@ -39,14 +45,13 @@ void cuda_multiplication(Matrix A, Matrix B) {
             scale_csr_row(B, scalar, row, i);
         }
     }
-
 }
 
 
 int main(int argc, char *argv[]) {
     Matrix A, B;
     if (argc < 3) {
-        fprintf(stderr, "Usage: %s [martix-market-filename]\n", argv[0]);
+        printf("Usage: %s [martix-market-filename]\n", argv[0]);
         exit(1);
     }
 
@@ -55,7 +60,9 @@ int main(int argc, char *argv[]) {
     read_mm_matrix_csr(argv[2], &(B.M), &(B.N), &(B.nz), &(B.I), &(B.J), &(B.val));
     print_matrix_head(B);
 
-    cuda_multiplication(Matrix A, Matrix B);
+    timer t;
+    cuda_multiplication<<<10, 128>>>(A, B);
+    printf("time:%f milliseconds\n", t.milliseconds_elapsed());
 
     return 0;
 }
