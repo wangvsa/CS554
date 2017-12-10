@@ -23,10 +23,11 @@ inline void scale_csr_row(Matrix mat, float scalar, int A_row, int A_col, unorde
         int B_col = mat.J[i];
         double val = mat.val[i] * scalar;
         size_t p = key(A_row, B_col);
+        // The operation of map takes most of computation time
         if((*C).find(p) == (*C).end()) {
-        	    (*C)[p] = val;
+            (*C)[p] = val;
         } else {
-        	    (*C)[p] += val;
+            (*C)[p] += val;
         }
     }
 }
