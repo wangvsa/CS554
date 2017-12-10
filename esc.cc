@@ -2,15 +2,13 @@
 #include <stdio.h>
 #include <unordered_map>
 #include <vector>
-#include <chrono>
 #include <omp.h>
+#include <mkl.h>
 #include "util.h"
 #include "matrix_io.h"
 #include "esc.h"
 
 using namespace std;
-using Clock=std::chrono::high_resolution_clock;
-
 
 // Define key(i, j), convert coordinate(i, j) to a size_t value
 inline size_t key(int i, int j) {return (size_t) i << 32 | (unsigned int) j;}
@@ -61,7 +59,7 @@ Matrix map_to_coo_matrix(unordered_map<size_t, float> m, int ROWS, int COLS) {
  *  Use unordered_map to avoid sort and compression
  */
 void esc(Matrix A, Matrix B) {
-	auto start = Clock::now();
+    double t1 = dsecnd();
 
     int const T = 8;
     // each thread will operate on its own map
@@ -79,13 +77,13 @@ void esc(Matrix A, Matrix B) {
 			scale_csr_row(B, scalar, row, i, &(maps[tid]));
 		}
 	}
-	auto end = Clock::now();
+
+    double t2 = dsecnd();
 
 	//Matrix res = map_to_coo_matrix(C, A.M, B.N);
 	//print_matrix_head(res);
 	//print_coo_matrix(res);
 
-	std::chrono::duration<double, milli> fp_ms = end - start;
-	cout<<"time: "<<fp_ms.count()<<" milliseconds"<<endl;
+	cout<<"time: "<<t2-t1<<" seconds"<<endl;
 }
 
