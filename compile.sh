@@ -1,1 +1,1 @@
-icc *.cc --std=c++11 -fopenmp -mkl -O3
+icpc *.cc --std=c++11 -qopenmp -mkl
