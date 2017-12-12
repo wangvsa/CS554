@@ -11,24 +11,27 @@
 using namespace std;
 
 // Define key(i, j), convert coordinate(i, j) to a size_t value
-inline size_t key(int i, int j) {return (size_t) i << 32 | (unsigned int) j;}
+inline int key(int i, int j, int COLS) {return i * COLS + j;}
 inline int get_first(size_t C) { return C>>32; }
 inline int get_second(size_t C) { return C & 0xFFFFFFFF; }
 
 
 // Scale ith row of matrix B
-inline void scale_csr_row(Matrix mat, float scalar, int A_row, int A_col, unordered_map<size_t, float> *C) {
+inline void scale_csr_row(Matrix mat, float scalar, int A_row, int A_col, unordered_map<int, float> *C) {
     // access ith row of B, i.e. ith col of A
     for(int i=mat.I[A_col]; i < mat.I[A_col+1]; i++) {
         int B_col = mat.J[i];
         double val = mat.val[i] * scalar;
-        size_t p = key(A_row, B_col);
+        size_t p = key(A_row, B_col, mat.N);
         // The operation of map takes most of computation time
+        /*
         if((*C).find(p) == (*C).end()) {
             (*C)[p] = val;
         } else {
             (*C)[p] += val;
         }
+        */
+        (*C)[p] = val;
     }
 }
 
@@ -65,7 +68,7 @@ void esc(Matrix A, Matrix B) {
     int const T = 8;
     // each thread will operate on its own map
     // and we'll combine all maps at the end
-	unordered_map<size_t, float> maps[T];
+	unordered_map<int, float> maps[T];
 
     omp_set_num_threads(T);
     #pragma omp parallel for
