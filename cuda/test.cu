@@ -8,13 +8,13 @@
 using namespace std;
 using Clock=std::chrono::high_resolution_clock;
 
-#define HASH_TABLE_SIZE 3500000
+#define HASH_TABLE_SIZE 32
 
 
 // Define key(i, j), convert coordinate(i, j) to a size_t value
-__device__ inline int key(int i, int j) {return (size_t) i << 32 | (unsigned int) j;}
-inline int get_first(size_t C) { return C>>32; }
-inline int get_second(size_t C) { return C & 0xFFFFFFFF; }
+__device__ inline int key(int i, int j, int COLS) { return i * COLS + j;}
+inline int get_i(int index, int COLS) { return index / COLS; }
+inline int get_j(int index, int COLS) { return index % COLS; }
 
 
 // Every thread in the same block will run this method with different scalar
@@ -27,10 +27,13 @@ inline void scale_csr_row(Matrix mat, float scalar, int A_row, int A_col, int *d
         float val = mat.val[i] * scalar;
 
         // p is a simple hash code for (A_row, B_col) pair
-        int p = key(A_row, B_col);
+        int p = key(A_row, B_col, mat.M);
         int index = p & (HASH_TABLE_SIZE-1);
-        atomicAdd(&(dev_C_key[index]), p);
+
+        dev_C_key[index] = p;
         atomicAdd(&(dev_C_val[index]), val);
+
+        //printf("p:%d, index:%d, (%d %d %f %f)\n", p, index, A_row, B_col, val, dev_C_val[index]);
     }
 }
 
@@ -96,12 +99,26 @@ int main(int argc, char *argv[]) {
     int *dev_C_key;
     float *dev_C_val;
     cudaMalloc((void**)&dev_C_key, sizeof(int)*HASH_TABLE_SIZE);
+    cudaMemset(dev_C_key, -1, sizeof(int)*HASH_TABLE_SIZE);
     cudaMalloc((void**)&dev_C_val, sizeof(float)*HASH_TABLE_SIZE);
+    cudaMemset(dev_C_val, 0, sizeof(float)*HASH_TABLE_SIZE);
     printf("time for allocating memory:%f milliseconds\n", t1.milliseconds_elapsed());
 
     timer t2;
     cuda_multiplication<<<A.N, 32>>>(dev_A, dev_B, dev_C_key, dev_C_val);
     printf("time for SpMM: %f milliseconds\n", t2.milliseconds_elapsed());
+
+    // Copy back the hash table
+    int *C_key = new int[HASH_TABLE_SIZE];
+    float *C_val = new float[HASH_TABLE_SIZE];
+    cudaMemcpy(C_key, dev_C_key, HASH_TABLE_SIZE*sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(C_val, dev_C_val, HASH_TABLE_SIZE*sizeof(float), cudaMemcpyDeviceToHost);
+    for(int i = 0; i < HASH_TABLE_SIZE; i++) {
+        int index = C_key[i];
+        if(index != -1)
+            printf("%d: (%d %d %f)\n", index, get_i(index, A.N), get_j(index, A.N), C_val[i]);
+    }
+
 
 
     cudaFree(dev_A.I);
@@ -112,5 +129,7 @@ int main(int argc, char *argv[]) {
     cudaFree(dev_B.val);
     cudaFree(dev_C_key);
     cudaFree(dev_C_val);
+    delete C_key;
+    delete C_val;
     return 0;
 }
